@@ -15,7 +15,7 @@ class Spaceship(pygame.sprite.Sprite):
         self.lasers_group = pygame.sprite.Group()
         self.laser_ready = True
         self.laser_time = 0
-        self.laser_delay = 300
+        self.laser_delay = 500
 
     # Método para obtener los inputs del jugador
     def get_user_input(self):

@@ -40,6 +40,11 @@ pygame.time.set_timer(extra_point_alien, random.randint(4000, 8000))
 running = True
 while running:
     for event in pygame.event.get():
+
+        # Overlay oscuro para resaltar menus
+        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+
         if event.type == pygame.QUIT:
             running = False
 
@@ -116,26 +121,34 @@ while running:
     pygame.draw.line(screen, ui_color, (25, 770), (1045, 770), 3)
 
     if app_state == 'menu':
-        title = font.render("  Space Invaders", False, ui_color)
-        screen.blit(title, (300, 150))
-
         # Botones
-        start_rect = pygame.Rect(362, 260, 300, 60)
-        highs_rect = pygame.Rect(362, 340, 300, 60)
-        quit_rect = pygame.Rect(362, 420, 300, 60)
+        start_rect = pygame.Rect(((screen_width + offset) - 320) // 2, 260, 320, 60)
+        highs_rect = pygame.Rect(((screen_width + offset) - 320) // 2, 340, 320, 60)
+        quit_rect = pygame.Rect(((screen_width + offset) - 320) // 2, 420, 320, 60)
 
         pygame.draw.rect(screen, ui_color, start_rect, 2)
         pygame.draw.rect(screen, ui_color, highs_rect, 2)
         pygame.draw.rect(screen, ui_color, quit_rect, 2)
 
-        screen.blit(font.render("   New Game", False, ui_color), (380, 270))
-        screen.blit(font.render("  High Scores", False, ui_color), (370, 350))
-        screen.blit(font.render("Exit", False, ui_color), (450, 430))
+        title = font.render("Space Invaders", False, ui_color)
+        title_rect = title.get_rect(
+            centerx=start_rect.centerx,
+            bottom=start_rect.top - 30
+        )
+        screen.blit(title, title_rect)
+
+        start_text = font.render("Nueva Partida", False, ui_color)
+        highs_text = font.render("Mejores Puntajes", False, ui_color)
+        quit_text  = font.render("Salir", False, ui_color)
+
+        screen.blit(start_text, start_text.get_rect(center=start_rect.center))
+        screen.blit(highs_text, highs_text.get_rect(center=highs_rect.center))
+        screen.blit(quit_text,  quit_text.get_rect(center=quit_rect.center))
 
         # (Mini Top10 eliminado del menú — disponible solo en 'High Scores')
 
     elif app_state == 'highscores':
-        title = font.render("High Scores", False, ui_color)
+        title = font.render("Mejores Puntajes", False, ui_color)
         screen.blit(title, (200, 80))
         highs = game.load_highscores()
         for i, entry in enumerate(highs):
@@ -159,6 +172,7 @@ while running:
                 screen.blit(game_over, (750, 785, 50, 50))
         # Si estamos esperando nombre, mostrar input
         if game.await_highscore:
+            screen.blit(overlay, (0, 0))
             prompt = small_font.render("Ingresa nombre (ENTER para guardar):", False, ui_color)
             input_surf = small_font.render(name_input, False, ui_color)
             screen.blit(prompt, (50, 150))
@@ -203,6 +217,7 @@ while running:
         # Si estamos muertos y esperando nombre, dibujar prompt
         if not game.run:
             if game.await_highscore:
+                screen.blit(overlay, (0, 0))
                 prompt = small_font.render("Ingresa nombre (ENTER para guardar):", False, ui_color)
                 input_surf = small_font.render(name_input, False, ui_color)
                 screen.blit(prompt, (50, 150))
