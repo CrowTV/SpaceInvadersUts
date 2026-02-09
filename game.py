@@ -29,6 +29,9 @@ class Game:
         self.high_scores_file = "highscores.json"
         self.await_highscore = False
         self.mission_completed = False
+        self.playing_music = False
+        self.player_hit_sound = pygame.mixer.Sound("sounds/player_hit.ogg")
+
         # Cargar highscore desde el archivo al iniciar
         try:
             scores = self.load_highscores()
@@ -270,6 +273,7 @@ class Game:
         if self.alien_lasers_group:
             for laser_sprite in self.alien_lasers_group:
                 if pygame.sprite.spritecollide(laser_sprite, self.spaceship_group, False):
+                    self.player_hit_sound.play()
                     laser_sprite.kill()
                     print(f"Jugador golpeado")
                     self.lives -= 1

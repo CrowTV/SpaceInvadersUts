@@ -65,6 +65,9 @@ while running:
                 highs_rect = pygame.Rect(362, 340, 300, 60)
                 quit_rect = pygame.Rect(362, 420, 300, 60)
                 if start_rect.collidepoint(mx, my):
+                    #Empezar música
+                    pygame.mixer.music.load("sounds/music.ogg")
+                    pygame.mixer.music.play(-1)
                     game.reset()
                     app_state = 'playing'
                 elif highs_rect.collidepoint(mx, my):
@@ -216,6 +219,8 @@ while running:
 
         # Si estamos muertos y esperando nombre, dibujar prompt
         if not game.run:
+            # Detener música
+            pygame.mixer.music.stop()
             if game.await_highscore:
                 screen.blit(overlay, (0, 0))
                 prompt = small_font.render("Ingresa nombre (ENTER para guardar):", False, ui_color)
