@@ -33,7 +33,9 @@ class Game:
         self.player_hit_sound = pygame.mixer.Sound("sounds/player_hit.ogg")
         self.enemy_killed = pygame.mixer.Sound("sounds/explosion.ogg")
         self.extra_points = pygame.mixer.Sound("sounds/extra_point.ogg")
-        self.cooldown = 600
+        self.cooldown_time = 600
+        self.last_hit_time = 0
+        self.hit_cooldown = self.cooldown_time  # 600 ms
 
         # Cargar highscore desde el archivo al iniciar
         try:
@@ -195,6 +197,11 @@ class Game:
                     alien = Alien(alien_type, x + self.offset / 2, y)
                     self.aliens_group.add(alien)
 
+    # Cooldown para golpes al jugador
+    def can_player_be_hit(self):
+        current_time = pygame.time.get_ticks()
+        return current_time - self.last_hit_time >= self.hit_cooldown
+
     # Método para mover los aliens de un lado a otro cuando llegan a los bordes de la ventana
     def move_aliens(self):
         # Velocidad horizontal aumentada según nivel
@@ -278,12 +285,16 @@ class Game:
         if self.alien_lasers_group:
             for laser_sprite in self.alien_lasers_group:
                 if pygame.sprite.spritecollide(laser_sprite, self.spaceship_group, False):
-                    self.player_hit_sound.play()
+                    if self.can_player_be_hit():
+                        self.player_hit_sound.play()
+                        self.lives -= 1
+                        self.last_hit_time = pygame.time.get_ticks()
+                        print("Jugador golpeado")
+
+                        if self.lives <= 0:
+                            self.game_over()
+
                     laser_sprite.kill()
-                    print(f"Jugador golpeado")
-                    self.lives -= 1
-                    if self.lives == 0:
-                        self.game_over()
                 
                 hits = pygame.sprite.spritecollide(
                     laser_sprite,
