@@ -21,7 +21,7 @@ ui_color = (0, 180, 0)
 
 # Textos
 font = pygame.font.Font("font/monogram.ttf", 50)
-game_over = font.render("PERDISTE PENDEJO", False, ui_color)
+game_over = font.render("MISION FALLIDA", False, ui_color)
 score_text = font.render("PUNTOS", False, ui_color)
 highscore_text = font.render("RECORD", False, ui_color)
 
