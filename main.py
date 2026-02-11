@@ -1,5 +1,14 @@
-import pygame, sys, random
+import pygame, sys, random, serial
 from game import Game
+from laser import Laser # <--- Importante para que el disparo funcione
+
+# --- INICIO BLOQUE ARDUINO ---
+try:
+    # Ajusta 'COM3' al puerto que veas en tu IDE de Arduino
+    arduino = serial.Serial('COM3', 9600, timeout=0.1)
+except:
+    arduino = None
+# --- FIN BLOQUE ARDUINO ---
 
 pygame.init()
 
@@ -39,6 +48,36 @@ pygame.time.set_timer(extra_point_alien, random.randint(4000, 8000))
 # Game loop
 running = True
 while running:
+    # --- LECTURA DE COMANDOS ARDUINO ---
+    if arduino and arduino.in_waiting > 0:
+        try:
+            comando = arduino.readline().decode('utf-8').strip()
+            if app_state == 'playing' and game.run:
+                nave = game.spaceship_group.sprite
+                
+                # Movimiento lateral
+                if comando == "L":
+                    nave.rect.x -= 10
+                elif comando == "R":
+                    nave.rect.x += 10
+                
+                # DISPARO (Lógica integrada de spaceship.py)
+                elif comando == "F":
+                    if nave.laser_ready:
+                        nave.laser_ready = False
+                        # Creamos el láser usando los parámetros de tus amigos
+                        laser = Laser(nave.rect.center, 5, 255, 255, 255, nave.screen_height)
+                        nave.lasers_group.add(laser)
+                        nave.laser_time = pygame.time.get_ticks()
+                
+                # Mantener dentro de bordes
+                if nave.rect.left < offset:
+                    nave.rect.left = offset
+                if nave.rect.right > screen_width:
+                    nave.rect.right = screen_width
+        except:
+            pass
+    # ----------------------------------
     for event in pygame.event.get():
 
         # Overlay oscuro para resaltar menus
@@ -237,5 +276,6 @@ while running:
     # FPS
     clock.tick(60)
 
-
+if arduino:
+    arduino.close()
 pygame.quit()

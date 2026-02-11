@@ -31,6 +31,9 @@ class Game:
         self.mission_completed = False
         self.playing_music = False
         self.player_hit_sound = pygame.mixer.Sound("sounds/player_hit.ogg")
+        self.enemy_killed = pygame.mixer.Sound("sounds/explosion.ogg")
+        self.extra_points = pygame.mixer.Sound("sounds/extra_point.ogg")
+        self.cooldown = 600
 
         # Cargar highscore desde el archivo al iniciar
         try:
@@ -251,11 +254,13 @@ class Game:
                 if aliens_hit:
                     for alien in aliens_hit:
                         self.score += alien.type * 100
+                        self.enemy_killed.play()
                         self.check_for_highscore()
                         laser_sprite.kill()
 
                 if pygame.sprite.spritecollide(laser_sprite, self.extra_point_group, True):
                     self.score += 500
+                    self.extra_points.play()
                     self.check_for_highscore()
                     laser_sprite.kill()
 
