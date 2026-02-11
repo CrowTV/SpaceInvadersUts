@@ -29,6 +29,17 @@ class Game:
         self.high_scores_file = "highscores.json"
         self.await_highscore = False
         self.mission_completed = False
+        self.playing_music = False
+        self.player_hit_sound = pygame.mixer.Sound("sounds/player_hit.ogg")
+        self.enemy_killed = pygame.mixer.Sound("sounds/explosion.ogg")
+        self.extra_points = pygame.mixer.Sound("sounds/extra_point.ogg")
+        self.cooldown_time = 600
+        self.last_hit_time = 0
+        self.hit_cooldown = self.cooldown_time  # 600 ms
+        # Ajustar cooldown de golpe a 1000ms por invulnerabilidad requerida
+        self.cooldown_time = 1000
+        self.hit_cooldown = self.cooldown_time
+
         # Cargar highscore desde el archivo al iniciar
         try:
             scores = self.load_highscores()
@@ -189,6 +200,11 @@ class Game:
                     alien = Alien(alien_type, x + self.offset / 2, y)
                     self.aliens_group.add(alien)
 
+    # Cooldown para golpes al jugador
+    def can_player_be_hit(self):
+        current_time = pygame.time.get_ticks()
+        return current_time - self.last_hit_time >= self.hit_cooldown
+
     # Método para mover los aliens de un lado a otro cuando llegan a los bordes de la ventana
     def move_aliens(self):
         # Velocidad horizontal aumentada según nivel
@@ -248,11 +264,13 @@ class Game:
                 if aliens_hit:
                     for alien in aliens_hit:
                         self.score += alien.type * 100
+                        self.enemy_killed.play()
                         self.check_for_highscore()
                         laser_sprite.kill()
 
                 if pygame.sprite.spritecollide(laser_sprite, self.extra_point_group, True):
                     self.score += 500
+                    self.extra_points.play()
                     self.check_for_highscore()
                     laser_sprite.kill()
 
@@ -270,11 +288,21 @@ class Game:
         if self.alien_lasers_group:
             for laser_sprite in self.alien_lasers_group:
                 if pygame.sprite.spritecollide(laser_sprite, self.spaceship_group, False):
+                    if self.can_player_be_hit():
+                        self.player_hit_sound.play()
+                        self.lives -= 1
+                        self.last_hit_time = pygame.time.get_ticks()
+                        # Iniciar invulnerabilidad y parpadeo en la nave
+                        try:
+                            self.spaceship_group.sprite.start_invulnerability()
+                        except Exception:
+                            pass
+                        print("Jugador golpeado")
+
+                        if self.lives <= 0:
+                            self.game_over()
+
                     laser_sprite.kill()
-                    print(f"Jugador golpeado")
-                    self.lives -= 1
-                    if self.lives == 0:
-                        self.game_over()
                 
                 hits = pygame.sprite.spritecollide(
                     laser_sprite,
