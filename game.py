@@ -322,6 +322,18 @@ class Game:
                     print(f"Jugador golpeado por alien")
                     self.game_over()
 
+            # Comprobar si alguna nave enemiga pasó la línea de la nave del jugador -> Game Over
+            try:
+                player_top = self.spaceship_group.sprite.rect.top
+                for alien in self.aliens_group.sprites():
+                    if alien.rect.bottom >= player_top:
+                        print("Alien pasó la línea del jugador - Game Over")
+                        self.game_over()
+                        break
+            except Exception:
+                # Si por alguna razón no existe la nave (temporalmente), ignorar
+                pass
+
         # Si no quedan aliens, pasa al siguiente nivel
         if not self.aliens_group:
             self.next_level()

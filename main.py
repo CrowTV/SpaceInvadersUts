@@ -5,7 +5,7 @@ from laser import Laser # <--- Importante para que el disparo funcione
 # --- INICIO BLOQUE ARDUINO ---
 try:
     # Ajusta 'COM3' al puerto que veas en tu IDE de Arduino
-    arduino = serial.Serial('COM3', 9600, timeout=0.1)
+    arduino = serial.Serial('COM8', 9600, timeout=0.1)
 except:
     arduino = None
 # --- FIN BLOQUE ARDUINO ---
@@ -36,6 +36,29 @@ name_input = ""
 small_font = pygame.font.Font("font/monogram.ttf", 30)
 app_state = 'menu'  # 'menu', 'playing', 'highscores'
 paused = False
+
+# Cargar logo del estudio (si existe) y usarlo como icono
+logo_img = None
+# Probar varios nombres de archivo comunes (incluye el nombre con espacio solicitado)
+for candidate in ("logo/CSM studio.png", "logo/logo.png", "logo/csm studio.png"):
+    try:
+        logo_img = pygame.image.load(candidate).convert_alpha()
+        break
+    except Exception:
+        logo_img = None
+
+if logo_img:
+    # Escalar para que no sea demasiado grande en el menú
+    max_logo_w = 220
+    lw, lh = logo_img.get_size()
+    if lw > max_logo_w:
+        logo_img = pygame.transform.smoothscale(logo_img, (max_logo_w, int(max_logo_w * lh / lw)))
+    # Icono de ventana (32x32)
+    try:
+        icon_surf = pygame.transform.smoothscale(logo_img, (32, 32))
+        pygame.display.set_icon(icon_surf)
+    except Exception:
+        pass
 
 mission_surface = font.render("MISION COMPLETADA", False, ui_color)
 congrats_surface = small_font.render("¡FELICIDADES! Completaste la mision.", False, ui_color)
@@ -105,10 +128,13 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
             if app_state == 'menu':
-                # Botones centrados
-                start_rect = pygame.Rect(362, 260, 300, 60)
-                highs_rect = pygame.Rect(362, 340, 300, 60)
-                quit_rect = pygame.Rect(362, 420, 300, 60)
+                # Botones centrados — calcular igual que en la parte de dibujo (tener en cuenta logo)
+                menu_top = 260
+                if logo_img:
+                    menu_top += logo_img.get_height() // 2 + 20
+                start_rect = pygame.Rect(((screen_width + offset) - 320) // 2, menu_top, 320, 60)
+                highs_rect = pygame.Rect(((screen_width + offset) - 320) // 2, menu_top + 80, 320, 60)
+                quit_rect = pygame.Rect(((screen_width + offset) - 320) // 2, menu_top + 160, 320, 60)
                 if start_rect.collidepoint(mx, my):
                     #Empezar música
                     pygame.mixer.music.load("sounds/music.ogg")
@@ -153,8 +179,11 @@ while running:
                 else:
                     running = False
             elif event.key == pygame.K_b and app_state == 'playing' and paused:
-                # Reanudar con tecla 'b' (botón azul)
+                # Reanudar con tecla 'b' (botón rojo)
                 paused = False
+            elif event.key == pygame.K_o and app_state == 'playing' and game.run and not paused:
+                # Saltar nivel con la tecla 'o'
+                game.next_level()
             elif event.key == pygame.K_SPACE and app_state == 'playing' and game.run == False and not game.await_highscore:
                 # Reiniciar partida con SPACE cuando esté en pantalla de game over
                 game.reset()
@@ -175,10 +204,13 @@ while running:
     pygame.draw.line(screen, ui_color, (25, 770), (1045, 770), 3)
 
     if app_state == 'menu':
-        # Botones
-        start_rect = pygame.Rect(((screen_width + offset) - 320) // 2, 260, 320, 60)
-        highs_rect = pygame.Rect(((screen_width + offset) - 320) // 2, 340, 320, 60)
-        quit_rect = pygame.Rect(((screen_width + offset) - 320) // 2, 420, 320, 60)
+        # Botones (bajar menú si hay logo)
+        menu_top = 260
+        if logo_img:
+            menu_top += logo_img.get_height() // 2 + 20
+        start_rect = pygame.Rect(((screen_width + offset) - 320) // 2, menu_top, 320, 60)
+        highs_rect = pygame.Rect(((screen_width + offset) - 320) // 2, menu_top + 80, 320, 60)
+        quit_rect = pygame.Rect(((screen_width + offset) - 320) // 2, menu_top + 160, 320, 60)
 
         pygame.draw.rect(screen, ui_color, start_rect, 2)
         pygame.draw.rect(screen, ui_color, highs_rect, 2)
@@ -189,6 +221,10 @@ while running:
             centerx=start_rect.centerx,
             bottom=start_rect.top - 30
         )
+        # Si hay logo, dibujarlo encima del título
+        if logo_img:
+            logo_rect = logo_img.get_rect(centerx=start_rect.centerx, bottom=title_rect.top - 10)
+            screen.blit(logo_img, logo_rect)
         screen.blit(title, title_rect)
 
         start_text = font.render("Nueva Partida", False, ui_color)
@@ -200,6 +236,12 @@ while running:
         screen.blit(quit_text,  quit_text.get_rect(center=quit_rect.center))
 
         # (Mini Top10 eliminado del menú — disponible solo en 'High Scores')
+        # Footer: mostrar créditos y versión en el menú inicio (posicionado encima de la línea inferior)
+        version_surf = small_font.render("Version 1.0", False, ui_color)
+        studio_surf = small_font.render("CSM Studio", False, ui_color)
+        footer_y = 740
+        screen.blit(studio_surf, (20, footer_y))
+        screen.blit(version_surf, (screen.get_width() - version_surf.get_width() - 20, footer_y))
 
     elif app_state == 'highscores':
         title = font.render("Mejores Puntajes", False, ui_color)
@@ -275,7 +317,7 @@ while running:
             overlay.fill((0, 0, 0, 180))
             screen.blit(overlay, (0, 0))
             paused_surf = font.render("PAUSADO", False, ui_color)
-            subtitle = small_font.render("Preciona el boton azul para continuar", False, ui_color)
+            subtitle = small_font.render("Preciona el boton rojo para continuar", False, ui_color)
             screen.blit(paused_surf, paused_surf.get_rect(center=( (screen_width + offset)//2, (screen_height)//2 - 20 )))
             screen.blit(subtitle, subtitle.get_rect(center=( (screen_width + offset)//2, (screen_height)//2 + 30 )))
 
